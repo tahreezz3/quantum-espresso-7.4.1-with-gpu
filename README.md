@@ -63,7 +63,7 @@ sudo apt-get install -y libblas-dev liblapack-dev libfftw3-dev liblapack-doc lib
 ### 2. Install NVIDIA HPC SDK (v25.3)
 Downloads and extracts the SDK, then installs it silently:
 ```bash
-wget <HPC SDK TAR>
+wget https://developer.download.nvidia.com/hpc-sdk/25.3/nvhpc_2025_253_Linux_x86_64_cuda_12.8.tar.gz
 tar xpzf nvhpc_2025_253_Linux_x86_64_cuda_12.8.tar.gz
 cd nvhpc_2025_253_Linux_x86_64_cuda_12.8
 printf "\n3\n\n" | ./install
@@ -71,10 +71,19 @@ printf "\n3\n\n" | ./install
 
 ### 3. Set Environment Variables
 Sets `PATH`, `LD_LIBRARY_PATH`, `CPPFLAGS`, etc., for the compiler, CUDA, and MPI.
+```bash
+export HPC_BASE="/opt/nvidia/hpc_sdk/Linux_x86_64/25.3"
+export CUDA_VER="12.8"
+
+export PATH="$HPC_BASE/comm_libs/mpi/bin:$HPC_BASE/comm_libs/$CUDA_VER/openmpi4/openmpi-4.1.5/bin:$HPC_BASE/compilers/bin:$HPC_BASE/compilers/compilers/extras:$PATH"
+export LD_LIBRARY_PATH="$HPC_BASE/compilers/extras/qd/lib:$HPC_BASE/cuda/$CUDA_VER/targets/x86_64-linux/lib:$HPC_BASE/comm_libs/$CUDA_VER/openmpi4/openmpi-4.1.5/lib:$LD_LIBRARY_PATH"
+export MANPATH="$HPC_BASE/compilers/man:$HPC_BASE/comm_libs/mpi/man:$MANPATH"
+export CPPFLAGS="-I$HPC_BASE/cuda/$CUDA_VER/include"
+```
 
 ### 4. Download Quantum ESPRESSO
 ```bash
-wget <QE 7.4.1 TAR>
+wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/dc93af13-2b3f-40c3-a41b-2bc05a707a80/intel-onemkl-2025.1.0.803.sh
 tar xpzf qe-7.4.1-ReleasePack.tar.gz
 ```
 
@@ -86,7 +95,14 @@ chmod +x ./intel-onemkl-2025.1.0.803.sh
 ```
 
 ### 6. Set MKL Environment Variables
-Exports all necessary paths for MKL libraries and headers.
+Export all necessary paths for MKL libraries and headers.
+```bash
+export MKLROOT="/opt/intel/mkl/2025.1"
+export PATH="$MKLROOT/bin:$PATH"
+export LD_LIBRARY_PATH="$MKLROOT/lib/intel64:$LD_LIBRARY_PATH"
+export LIBRARY_PATH="$MKLROOT/lib/intel64:$LIBRARY_PATH"
+export CPATH="$MKLROOT/include:$CPATH"
+```
 
 ### 7. Configure QE
 ```bash
