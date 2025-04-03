@@ -7,10 +7,12 @@
 set -e  # Exit on any error
 
 # Update and install required libraries
+echo "Updating package list and installing required libraries..."
 sudo apt-get update
 sudo apt-get install -y libblas-dev liblapack-dev libfftw3-dev liblapack-doc libfftw3-doc
 
-# Step 1: Install NVIDIA HPC SDK
+echo "Step 1: Install NVIDIA HPC SDK"
+
 wget https://developer.download.nvidia.com/hpc-sdk/25.3/nvhpc_2025_253_Linux_x86_64_cuda_12.8.tar.gz
 
 # Extract the SDK
@@ -32,12 +34,12 @@ export CPPFLAGS="-I$HPC_BASE/cuda/${CUDA_VER}/include"
 # Go back to root directory
 cd /content || cd ~
 
-# Step 2: Download and extract Quantum ESPRESSO 7.4.1
+echo "Step 2: Download and install Quantum ESPRESSO 7.4.1"
 wget https://www.quantum-espresso.org/rdm-download/488/v7-4-1/b9b1bb4c233798e6745b13eb56a52ade/qe-7.4.1-ReleasePack.tar.gz
 
 tar xpzf qe-7.4.1-ReleasePack.tar.gz
 
-# Step 3: Install Intel MKL (Manual download assumed)
+echo "Step 3: Install Intel MKL (online version)"
 wget https://registrationcenter-download.intel.com/akdlm/IRC_NAS/dc93af13-2b3f-40c3-a41b-2bc05a707a80/intel-onemkl-2025.1.0.803.sh
 chmod +x ./intel-onemkl-2025.1.0.803.sh
 ./intel-onemkl-2025.1.0.803.sh -a -s --eula accept --install-dir /opt/intel
@@ -50,7 +52,7 @@ export LD_LIBRARY_PATH="$MKL_PATH/lib/intel64:$LD_LIBRARY_PATH"
 export LIBRARY_PATH="$MKL_PATH/lib/intel64:$LIBRARY_PATH"
 export CPATH="$MKL_PATH/include:$CPATH"
 
-# Step 4: Build Quantum ESPRESSO
+echo "Step 4: Build Quantum ESPRESSO"
 cd /content/qe-7.4.1 || cd ~/qe-7.4.1
 make veryclean
 
@@ -64,13 +66,13 @@ make veryclean
   SCALAPACK_LIBS="-lmkl_scalapack_lp64 -lmkl_blacs_openmpi_lp64" \
   FFT_LIBS="-lfftw3" \
   FFT_INCLUDE="/usr/include" \
-  LIBDIRS="/usr/lib/x86_64-linux-gnu /opt/intel/mkl/2025.1/lib/intel64"
+  LIBDIRS="/usr/lib/x86_64-linux-gnu /opt/intel/mkl/2025.1/lib/intel64" || { echo "Failed to configure Quantum ESPRESSO."; exit 1; }
 
 # Ensure FFTW usage is defined
 sed -i 's/^DFLAGS *=/DFLAGS = -D__FFTW /' make.inc
 
-# Compile pw.x (main DFT code)
-make pw -j$(nproc)
+echo "Step 5: Compiling pw.x (main DFT code)"
+make pw -j$(nproc) || { echo "Failed to compile Quantum ESPRESSO."; exit 1; }
 
 # Add QE binaries to path
 export PATH="/content/qe-7.4.1/bin:$PATH"
